@@ -42,7 +42,7 @@ def client() -> anthropic.Anthropic:
 
 
 def structured(
-    *, system: str, prompt: str, schema: Type[T], effort: str = "high", max_tokens: int = 32000
+    *, system: str, prompt: str, schema: Type[T], effort: str = "high", max_tokens: int = 16000
 ) -> T:
     """One Claude call whose output is validated against a Pydantic model."""
     try:
