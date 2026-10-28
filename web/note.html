@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tomorrow's note</title>
+<link rel="stylesheet" href="/style.css">
+<style>
+  .wrap { display: grid; grid-template-columns: 360px 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 820px) { .wrap { grid-template-columns: 1fr; } }
+  .phone { border: 2px solid var(--green); border-radius: 28px; padding: 16px; background: #fff; max-width: 360px; }
+  .phone .bar { background: var(--green); color: #fff; border-radius: 10px; padding: 10px 12px; font-weight: 700; }
+  .phone .blk { border-radius: 10px; padding: 10px 12px; margin-top: 10px; }
+  .phone .hard { background: var(--amber-soft); }
+  .phone .next { background: #f0f3f1; }
+  .phone .q { background: var(--green-soft); }
+  .phone h4 { margin: 0 0 4px; font-size: 13px; }
+  .phone p, .phone li { font-size: 14px; margin: 2px 0; }
+  .phone ul { padding-left: 18px; margin: 4px 0; }
+  pre { background: #f0f3f1; padding: 10px; border-radius: 8px; overflow: auto; font-size: 12px; max-height: 360px; }
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="/">Doosri Awaaz</a>
+  <nav><a href="/">Packs</a><a href="/prepare.html">Prepare</a><a href="/about.html">How it works</a></nav>
+</header>
+<main>
+  <h1>Tomorrow's note</h1>
+  <p class="lede">When the teacher's phone is in network range, it sends the group-level log (no names, no audio) to Claude, which writes a short note. A check then compares every number and item in the note with the log.</p>
+  <div class="row" style="margin-bottom:14px">
+    <div><label for="lang">Note language</label><select id="lang"><option>Hindi</option><option>Marathi</option><option>English</option></select></div>
+    <div><button id="go">Write the note</button> <span id="st" class="small muted"></span></div>
+  </div>
+  <div class="wrap">
+    <div id="phone" class="phone"><div class="bar">Tomorrow's note</div><p class="small muted" style="margin-top:12px">Not written yet.</p></div>
+    <div class="card"><h3>Log sent</h3><div id="check"></div><pre id="log"></pre></div>
+  </div>
+</main>
+<script>
+const id = new URLSearchParams(location.search).get("id");
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const log = JSON.parse(sessionStorage.getItem("doosri-log") || "null");
+document.getElementById("log").textContent = log ? JSON.stringify(log, null, 1) : "No session log in this browser. Run a session first.";
+if (!log) document.getElementById("go").disabled = true;
+
+document.getElementById("go").onclick = async () => {
+  const st = document.getElementById("st");
+  if (!navigator.onLine) { st.innerHTML = '<span class="err">Offline. The log stays on the device until there is network.</span>'; return; }
+  st.innerHTML = '<span class="spinner"></span> Claude is writing the note';
+  document.getElementById("go").disabled = true;
+  try {
+    const r = await fetch("/api/note", {method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({pack_id: id, log, language: document.getElementById("lang").value})});
+    const out = await r.json();
+    if (!r.ok) throw new Error(out.detail || "Request failed");
+    const n = out.note;
+    document.getElementById("phone").innerHTML = `<div class="bar">Tomorrow's note</div>
+      <div class="blk"><h4>${esc(n.headline)}</h4><p class="small muted">${n.first_try_correct} of ${n.total_items} right first time</p></div>
+      ${n.found_hard.length ? `<div class="blk hard"><h4>Group found hard</h4><ul>${n.found_hard.map(h => `<li>${esc(h.what_happened)}</li>`).join("")}</ul></div>` : ""}
+      <div class="blk next"><h4>Suggested next</h4><ul>${n.suggested_next.map(s => `<li>${esc(s)}</li>`).join("")}</ul></div>
+      ${n.questions_for_you.length ? `<div class="blk q"><h4>Questions children asked you to answer</h4><ul>${n.questions_for_you.map(s => `<li>${esc(s)}</li>`).join("")}</ul></div>` : ""}`;
+    document.getElementById("check").innerHTML = out.problems.length
+      ? `<div class="notice bad">The check found ${out.problems.length} mismatch(es) with the log; this note would not be sent:<ul>${out.problems.map(p => `<li>${esc(p)}</li>`).join("")}</ul></div>`
+      : `<div class="notice good">Checked against the log: every count, item and question in the note matches.</div>`;
+    st.textContent = "";
+  } catch (e) { st.innerHTML = `<span class="err">${esc(e.message)}</span>`; }
+  document.getElementById("go").disabled = false;
+};
+</script>
+</body>
+</html>

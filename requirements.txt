@@ -1,0 +1,6 @@
+# Web app (Prepare, Review, classroom simulator, next-day note)
+anthropic>=2.3
+pydantic>=2.7
+fastapi>=0.115
+uvicorn[standard]>=0.30
+edge-tts>=7.0

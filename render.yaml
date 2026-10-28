@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: doosri-awaaz
+    runtime: docker
+    plan: free
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: DOOSRI_CLAUDE_CALLS_PER_HOUR
+        value: "6"

@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How it works</title>
+<link rel="stylesheet" href="/style.css">
+<style>
+  .layer { display: grid; grid-template-columns: 150px 1fr 120px; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .layer:last-child { border-bottom: 0; }
+  @media (max-width: 700px) { .layer { grid-template-columns: 1fr; gap: 4px; } }
+  .layer b { color: var(--green); }
+  ul.tight li { margin: 4px 0; }
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="/">Doosri Awaaz</a>
+  <nav><a href="/">Packs</a><a href="/prepare.html">Prepare</a><a class="on" href="/about.html">How it works</a></nav>
+</header>
+<main>
+  <h1>How it works</h1>
+  <p class="lede">Claude does the hard language work before class, where there is time and network. A person approves everything children will hear. In class, small models on the device only recognise answers and pick from approved lines.</p>
+
+  <h2>Where AI runs</h2>
+  <div class="card">
+    <div class="layer"><b>Draft</b><span>Claude Opus 5.5 turns the week's lesson into a pack: a story, 3-6 items with colour-button choices, hints, the words children may say, likely questions with answers, and near-miss questions the pack must not answer. Output is schema-validated JSON.</span><span class="tag online">online, before class</span></div>
+    <div class="layer"><b>Score</b><span>A second, independent Claude call scores the draft on five criteria (lesson fit, age, home-language naturalness, one clear answer, safety) and lists issues and phrases a native speaker should check.</span><span class="tag online">online</span></div>
+    <div class="layer"><b>Check</b><span>Code checks every pack: item counts, one correct colour per item, script, empty lines, prompt length. Errors block approval.</span><span class="tag online">no AI</span></div>
+    <div class="layer"><b>Approve</b><span>A teacher or local speaker edits any line and approves. Low scores need a written note. Only approved packs are voiced and can run.</span><span class="tag online">person</span></div>
+    <div class="layer"><b>Answer recognition</b><span>Vosk speech recognition on the device, restricted to the words that item expects. Unclear speech or low confidence triggers a re-prompt; a child is never marked wrong on a recognition error. Colour buttons always work.</span><span class="tag offline">offline</span></div>
+    <div class="layer"><b>Questions</b><span>A multilingual sentence-embedding model on the device matches a child's question to the pack's FAQ. Gate 1: it must be close to a known phrasing. Gate 2: it must be closer to that than to the near-miss questions. Otherwise: "ask your teacher". The model selects; it never writes speech.</span><span class="tag offline">offline</span></div>
+    <div class="layer"><b>Next-day note</b><span>When the teacher's phone has network, Claude turns the group-level log into a short note. Code then checks every count, item and question in the note against the log.</span><span class="tag online">optional sync</span></div>
+  </div>
+
+  <h2>Guardrails</h2>
+  <ul class="tight">
+    <li>Children only hear lines a person approved, voiced before class.</li>
+    <li>No open-ended generation in class; questions outside the pack go to the teacher.</li>
+    <li>Recognition limited to expected answers; uncertainty means re-prompt, not a wrong mark.</li>
+    <li>No child audio is stored or sent. The log has counts, timings and question text, no names.</li>
+    <li>Claude's outputs are schema-validated, independently scored, and checked by code before use.</li>
+  </ul>
+
+  <h2>What we tested and changed</h2>
+  <ul class="tight">
+    <li>Our proposal used a small on-device LLM to judge children's questions. On Hindi and Marathi test questions, qwen2.5 1.5B, qwen2.5 3B and gemma3 1B each got 4 of 8 right. A multilingual embedding model with Claude-written near-miss questions got all 8 (and matched in Python and in the browser), so the device uses that.</li>
+    <li>The Hindi speech model knows most Marathi number words (दोन, पाच, सहा, दहा) but not Marathi colour words (निळा, हिरवा, पिवळा), so colour buttons stay as the reliable fallback.</li>
+  </ul>
+  <p><a href="/">Back to packs</a></p>
+</main>
+</body>
+</html>

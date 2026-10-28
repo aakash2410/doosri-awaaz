@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Review a pack</title>
+<link rel="stylesheet" href="/style.css">
+<style>
+  .lines td:first-child { width: 120px; font-size: 13px; color: var(--muted); }
+  .lines textarea { min-height: 44px; }
+  .item { margin-top: 16px; }
+  .item h3 { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .sticky { position: sticky; bottom: 0; background: var(--bg); padding: 12px 0; border-top: 1px solid var(--line); }
+  .crit { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--line); }
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="/">Doosri Awaaz</a>
+  <nav><a href="/">Packs</a><a href="/prepare.html">Prepare</a><a href="/about.html">How it works</a></nav>
+</header>
+<main id="main"><span class="spinner"></span> Loading</main>
+<script>
+const id = new URLSearchParams(location.search).get("id");
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const LABELS = {curriculum_alignment: "Follows the lesson", age_appropriateness: "Right for age 6-9",
+  home_language_naturalness: "Home language sounds natural", answer_unambiguity: "One clear answer per item",
+  safety_and_culture: "Safe and fits the classroom"};
+let pack, findings;
+
+function lineRows(path, line, label) {
+  return `<tr><td>${esc(label)}</td>
+    <td><textarea data-path="${path}.home" lang="${pack.home_language}">${esc(line.home)}</textarea></td>
+    <td><textarea data-path="${path}.school" lang="hi">${esc(line.school)}</textarea></td></tr>`;
+}
+function linesTable(rows) {
+  return `<table class="lines"><tr><th></th><th>Home language (spoken first)</th><th>Hindi (spoken second)</th></tr>${rows}</table>`;
+}
+
+function render() {
+  const r = pack.rubric || {};
+  const errs = findings.filter(f => f.level === "error"), warns = findings.filter(f => f.level === "warning");
+  const approved = pack.status === "approved";
+  document.title = "Review: " + pack.title;
+  document.getElementById("main").innerHTML = `
+    <p class="small muted"><a href="/">Packs</a> / review</p>
+    <h1>${esc(pack.title)}</h1>
+    <p class="lede">Class ${pack.grade} ${esc(pack.subject)} · ${esc(pack.source_ref)} · home language ${esc(pack.home_language)}
+      <span class="tag ${approved ? "" : "draft"}">${esc(pack.status)}</span></p>
+    ${approved ? `<div class="notice good">Approved by ${esc(pack.review.reviewer)} (${esc(pack.review.role)}) on ${esc(pack.review.approved_at.slice(0,10))}. ${pack.review.notes ? "Note: " + esc(pack.review.notes) : ""}
+      <a class="btn" style="margin-left:8px" href="/classroom.html?id=${encodeURIComponent(pack.id)}">Run in class</a></div>` :
+      `<div class="notice">Draft. Read every line aloud, fix anything that sounds wrong, then approve. Editing an approved pack sends it back to draft.</div>`}
+
+    <div class="grid2">
+      <div class="card">
+        <h3>Claude's rubric score <span class="small muted">(independent second call)</span></h3>
+        ${Object.keys(LABELS).map(k => `<div class="crit"><span>${LABELS[k]}</span><span class="score ${r[k] < 3 ? "low" : ""}">${r[k] ?? "-"} / 5</span></div>`).join("")}
+        ${(r.issues || []).length ? `<h3 style="margin-top:12px">Issues to fix</h3><ul class="small">${r.issues.map(i => `<li>${esc(i)}</li>`).join("")}</ul>` : `<p class="small muted">No issues raised.</p>`}
+        ${(r.phrases_to_check || []).length ? `<h3>Ask a native speaker about</h3><ul class="small">${r.phrases_to_check.map(i => `<li>${esc(i)}</li>`).join("")}</ul>` : ""}
+      </div>
+      <div class="card">
+        <h3>Automatic checks</h3>
+        ${errs.length ? `<p class="err small">${errs.length} error(s) block approval:</p><ul class="small">${errs.map(f => `<li><b>${esc(f.where)}</b>: ${esc(f.message)}</li>`).join("")}</ul>` : `<p class="small">No blocking errors.</p>`}
+        ${warns.length ? `<p class="small muted">Warnings:</p><ul class="small">${warns.map(f => `<li><b>${esc(f.where)}</b>: ${esc(f.message)}</li>`).join("")}</ul>` : ""}
+      </div>
+    </div>
+
+    <h2>Opening</h2>
+    <div class="card">${linesTable(lineRows("intro", pack.intro, "Intro") + (pack.story ? lineRows("story", pack.story, "Story") : ""))}</div>
+
+    <h2>Items</h2>
+    ${pack.items.map((it, i) => `<div class="card item">
+      <h3>${esc(it.id)} · ${esc(it.skill)} <span class="small muted">correct: <span class="dot ${it.correct}"></span>${it.correct}</span></h3>
+      ${linesTable(
+        lineRows(`items.${i}.prompt`, it.prompt, "Question") +
+        it.choices.map((c, j) => lineRows(`items.${i}.choices.${j}.label`, c.label, c.colour)).join("") +
+        lineRows(`items.${i}.hint`, it.hint, "Hint") +
+        lineRows(`items.${i}.reveal`, it.reveal, "Reveal") +
+        lineRows(`items.${i}.praise`, it.praise, "Praise"))}
+      <label>Words that count as the right spoken answer (comma separated)</label>
+      <input data-path="items.${i}.accepted_spoken" data-list="1" value="${esc(it.accepted_spoken.join(", "))}">
+    </div>`).join("")}
+
+    <h2>Children's questions the device can answer</h2>
+    ${pack.faq.map((q, i) => `<div class="card item">
+      <p class="small"><b>Asked like:</b> ${q.questions.map(esc).join(" · ")}<br>
+      <b>Not answered by this (device says "ask your teacher"):</b> ${q.near_misses.map(esc).join(" · ")}</p>
+      ${linesTable(lineRows(`faq.${i}.answer`, q.answer, "Answer"))}</div>`).join("")}
+    <div class="card item">${linesTable(lineRows("ask_teacher", pack.ask_teacher, "Ask teacher") + lineRows("closing", pack.closing, "Closing"))}</div>
+
+    <div class="sticky">
+      <div class="row">
+        <div><label for="who">Reviewer name</label><input id="who" placeholder="Name"></div>
+        <div><label for="role">Role</label><select id="role"><option>teacher</option><option>local speaker</option><option>education coordinator</option></select></div>
+        <div style="flex:2 1 260px"><label for="notes">Note (required if a score is below 3)</label><input id="notes" placeholder="What you changed or checked"></div>
+      </div>
+      <div style="margin-top:10px">
+        <button class="secondary" id="save">Save edits</button>
+        <button id="approve" ${errs.length ? "disabled" : ""}>Approve for classroom use</button>
+        <span id="msg" class="small" style="margin-left:8px"></span>
+      </div>
+    </div>`;
+  document.getElementById("save").onclick = save;
+  document.getElementById("approve").onclick = approve;
+}
+
+function setPath(obj, path, value) {
+  const keys = path.split(".");
+  const last = keys.pop();
+  keys.reduce((o, k) => o[k], obj)[last] = value;
+}
+function collect() {
+  const copy = structuredClone(pack);
+  document.querySelectorAll("[data-path]").forEach(el => {
+    const v = el.dataset.list ? el.value.split(",").map(s => s.trim()).filter(Boolean) : el.value.trim();
+    setPath(copy, el.dataset.path, v);
+  });
+  return copy;
+}
+function changed() { return JSON.stringify(collect()) !== JSON.stringify(pack); }
+function msg(text, bad) { document.getElementById("msg").innerHTML = `<span class="${bad ? "err" : ""}">${esc(text)}</span>`; }
+
+async function call(url, method, body) {
+  const r = await fetch(url, {method, headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+  const out = await r.json();
+  if (!r.ok) throw new Error(typeof out.detail === "string" ? out.detail : "Request failed");
+  return out;
+}
+async function save() {
+  try {
+    ({pack, findings} = await call(`/api/packs/${encodeURIComponent(id)}`, "PUT", collect()));
+    render(); msg("Saved. The pack is a draft until approved.");
+  } catch (e) { msg(e.message, true); }
+}
+async function approve() {
+  const who = document.getElementById("who").value, role = document.getElementById("role").value,
+        notes = document.getElementById("notes").value;
+  try {
+    if (changed()) ({pack, findings} = await call(`/api/packs/${encodeURIComponent(id)}`, "PUT", collect()));
+    msg("Approving and recording audio for every line...");
+    document.getElementById("approve").disabled = true;
+    ({pack, findings} = await call(`/api/packs/${encodeURIComponent(id)}/approve`, "POST", {reviewer: who, role, notes}));
+    render(); window.scrollTo(0, 0);
+  } catch (e) { msg(e.message, true); document.getElementById("approve").disabled = false; }
+}
+
+fetch(`/api/packs/${encodeURIComponent(id)}`).then(r => { if (!r.ok) throw new Error(); return r.json(); })
+  .then(d => { ({pack, findings} = d); render(); })
+  .catch(() => document.getElementById("main").innerHTML = '<p class="err">Pack not found.</p>');
+</script>
+</body>
+</html>

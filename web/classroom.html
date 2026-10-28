@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Classroom device</title>
+<link rel="stylesheet" href="/style.css">
+<style>
+  .stage { display: grid; grid-template-columns: 340px 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 820px) { .stage { grid-template-columns: 1fr; } }
+  .device {
+    background: var(--green); border-radius: 28px; padding: 22px; color: #fff;
+    box-shadow: 0 12px 30px rgba(20,40,30,.25); position: sticky; top: 12px;
+  }
+  .screen {
+    background: #e9efe9; color: var(--green); border-radius: 10px; padding: 14px; min-height: 92px;
+    text-align: center; display: grid; place-items: center; font-weight: 600;
+  }
+  .screen .big { font-size: 22px; }
+  .screen .sub { font-size: 13px; color: var(--muted); font-weight: 500; }
+  .grille { display: grid; grid-template-columns: repeat(6, 1fr); gap: 9px; margin: 22px 30px; }
+  .grille i { width: 10px; height: 10px; border-radius: 50%; background: #3b5c4c; justify-self: center; transition: background .15s; }
+  .grille.live i { background: var(--amber); }
+  .ctrl { display: flex; gap: 10px; justify-content: center; }
+  .ctrl button { background: #fff; color: var(--green); min-width: 110px; }
+  .ctrl button.ask { background: var(--amber); }
+  .ctrl button.ask.hot { box-shadow: 0 0 0 4px rgba(232,163,61,.45); }
+  .keys { display: flex; justify-content: center; gap: 14px; margin-top: 20px; }
+  .key {
+    width: 58px; height: 58px; border-radius: 50%; border: 3px solid rgba(255,255,255,.25);
+    opacity: .28; transition: opacity .15s, transform .1s, box-shadow .15s; padding: 0;
+  }
+  .key.on { opacity: 1; }
+  .key.lit { box-shadow: 0 0 0 5px rgba(255,255,255,.7); }
+  .key:active { transform: scale(.94); }
+  .key.red { background: var(--c-red); } .key.blue { background: var(--c-blue); }
+  .key.green { background: var(--c-green); } .key.yellow { background: var(--c-yellow); }
+  .hintline { text-align: center; font-size: 12px; color: #b9cfc2; margin-top: 12px; min-height: 18px; }
+  .feed { max-height: 70vh; overflow-y: auto; }
+  .feed .ln { padding: 6px 0; border-bottom: 1px solid var(--line); display: flex; gap: 10px; }
+  .feed .ln .lang { font-size: 11px; font-weight: 700; color: var(--muted); width: 26px; flex: none; padding-top: 3px; text-transform: uppercase; }
+  .feed .ev { font-size: 13px; padding: 6px 10px; margin: 6px 0; border-radius: 8px; background: var(--amber-soft); }
+  .feed .ev.good { background: var(--green-soft); }
+  .status { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+  .opts { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; color: var(--muted); align-items: center; }
+  .opts label { display: inline; font-weight: 500; margin: 0; }
+  .opts input { width: auto; }
+  pre { background: #f0f3f1; padding: 10px; border-radius: 8px; overflow: auto; font-size: 12px; max-height: 260px; }
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="/">Doosri Awaaz</a>
+  <nav><a href="/">Packs</a><a href="/prepare.html">Prepare</a><a href="/about.html">How it works</a></nav>
+</header>
+<main>
+  <h1 id="title">Classroom device</h1>
+  <p class="lede">This page stands in for the device in the room. Speech recognition and question matching run here in the browser. After the first load, turn off Wi-Fi: the session still runs.</p>
+  <div class="status">
+    <span id="net" class="tag"></span>
+    <span id="asrState" class="tag draft">microphone: off</span>
+    <span id="qaState" class="tag draft">question matching: loading</span>
+  </div>
+  <div class="stage">
+    <div>
+      <div class="device">
+        <div class="screen" id="screen"><div><div class="big">Ready</div><div class="sub">Press Start</div></div></div>
+        <div class="grille" id="grille"></div>
+        <div class="ctrl">
+          <button id="start" disabled>Loading</button>
+          <button id="ask" class="ask" title="Hold to ask (or hold the space bar)">Hold to ask</button>
+        </div>
+        <div class="keys">
+          <button class="key red" data-c="red" aria-label="red"></button>
+          <button class="key blue" data-c="blue" aria-label="blue"></button>
+          <button class="key green" data-c="green" aria-label="green"></button>
+          <button class="key yellow" data-c="yellow" aria-label="yellow"></button>
+        </div>
+        <div class="hintline" id="hint">Keys 1-4 press the colour buttons</div>
+      </div>
+      <div class="opts" style="margin-top:12px">
+        <label><input type="checkbox" id="useMic" checked> Use microphone</label>
+        <label><input type="checkbox" id="fast"> Faster speech (demo)</label>
+      </div>
+    </div>
+    <div class="card">
+      <h3>What the group hears</h3>
+      <div class="feed" id="feed"><p class="small muted">Lines appear here as the device speaks them, home language first.</p></div>
+      <div id="after"></div>
+    </div>
+  </div>
+</main>
+<script src="/vendor/vosk.js"></script>
+<script type="module">
+import {Session, QuestionRouter} from "/js/engine.js";
+import {BrowserIO, loadEmbedder, loadRecogniser} from "/js/device.js";
+
+const id = new URLSearchParams(location.search).get("id");
+const base = `/packs/${encodeURIComponent(id)}`;
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+$("#grille").innerHTML = "<i></i>".repeat(18);
+
+function net() { const on = navigator.onLine; $("#net").textContent = on ? "online" : "offline"; $("#net").className = "tag " + (on ? "online" : "offline"); }
+addEventListener("online", net); addEventListener("offline", net); net();
+
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js");
+
+const feed = $("#feed");
+let first = true;
+function add(html) { if (first) { feed.innerHTML = ""; first = false; } feed.insertAdjacentHTML("beforeend", html); feed.scrollTop = feed.scrollHeight; }
+let countdown;
+const ui = {
+  say: (lang, text) => add(`<div class="ln"><span class="lang">${esc(lang)}</span><span>${esc(text)}</span></div>`),
+  screen: t => $("#screen").innerHTML = `<div><div class="big">${esc(t)}</div><div class="sub">${esc(pack.title)}</div></div>`,
+  choices: cols => document.querySelectorAll(".key").forEach(k => k.classList.toggle("on", !!cols && cols.includes(k.dataset.c))),
+  highlight: c => document.querySelectorAll(".key").forEach(k => k.classList.toggle("lit", k.dataset.c === c)),
+  listening: (on, s) => {
+    $("#grille").classList.toggle("live", on);
+    clearInterval(countdown);
+    if (on) { let n = s; $("#hint").textContent = `Listening ${n}s - answer aloud or press a colour`;
+      countdown = setInterval(() => { n -= 1; if (n >= 0) $("#hint").textContent = `Listening ${n}s - answer aloud or press a colour`; }, 1000); }
+    else $("#hint").textContent = "";
+  },
+  verdict: (heard, v) => {
+    const what = heard.kind === "button" ? `pressed ${heard.colour}` : heard.kind === "voice" ? `heard "${heard.text}" (confidence ${heard.confidence.toFixed(2)})` : "nothing heard";
+    const res = !v || v.result === "unclear" ? "unclear: re-prompt, not marked wrong" : v.result;
+    add(`<div class="ev ${v?.result === "correct" ? "good" : ""}">${esc(what)} → <b>${esc(res)}</b></div>`);
+  },
+  routed: (q, r) => add(`<div class="ev ${r.faq_id ? "good" : ""}">question "${esc(q)}" → ${r.faq_id ? `answered from pack (${esc(r.faq_id)}, similarity ${r.score.toFixed(2)})` : r.gate === "gate2" ? "too close to a question the pack cannot answer → ask the teacher" : "nothing in the pack is close → ask the teacher"}</div>`),
+  asking: (on, s) => { $("#ask").classList.toggle("hot", on); $("#grille").classList.toggle("live", false); $("#hint").textContent = on ? `Hold "Hold to ask" (or space) and speak. Waiting ${s}s.` : ""; },
+  recordingQuestion: on => { $("#grille").classList.toggle("live", on); if (on) $("#hint").textContent = "Recording question - release to finish"; },
+  rate: () => $("#fast").checked ? 1.4 : 1,
+  typedQuestion: null,
+};
+
+let pack, phrases, manifest, io, router, embed, recogniser = null;
+
+async function setupMic() {
+  if (!$("#useMic").checked) { recogniser = null; $("#asrState").textContent = "microphone: off (buttons only)"; return; }
+  $("#asrState").innerHTML = '<span class="spinner"></span> loading speech model';
+  try {
+    recogniser = await loadRecogniser();
+    $("#asrState").textContent = "speech recognition: on device"; $("#asrState").className = "tag";
+  } catch (e) {
+    console.error(e); recogniser = null;
+    $("#asrState").textContent = "microphone unavailable: buttons only"; $("#asrState").className = "tag draft";
+  }
+}
+
+async function init() {
+  try {
+    [pack, phrases, manifest] = await Promise.all([
+      fetch(`${base}/pack.json`).then(r => { if (!r.ok) throw new Error("no pack"); return r.json(); }),
+      fetch(`${base}/audio/phrases.json`).then(r => r.json()),
+      fetch(`${base}/audio/manifest.json`).then(r => r.json()),
+    ]);
+  } catch { $("#title").textContent = "Pack not found or not approved yet"; return; }
+  $("#title").textContent = pack.title;
+  document.title = pack.title;
+  if (pack.status !== "approved") { $("#start").textContent = "Not approved"; return; }
+  // Warm the cache with every audio file so the session works offline.
+  caches.open("doosri-v1").then(c => c.addAll(Object.values(manifest).flatMap(m => Object.values(m)).map(n => `${base}/audio/${n}`))).catch(() => {});
+  const mic = setupMic();
+  embed = loadEmbedder().then(e => { $("#qaState").textContent = "question matching: on device"; $("#qaState").className = "tag"; return e; })
+    .catch(e => { console.error(e); $("#qaState").textContent = "question matching unavailable"; return null; });
+  await mic;
+  $("#start").textContent = "Start"; $("#start").disabled = false;
+}
+
+$("#useMic").onchange = setupMic;
+document.querySelectorAll(".key").forEach(k => k.onclick = () => io?.press(k.dataset.c));
+addEventListener("keydown", e => {
+  const c = {"1": "red", "2": "blue", "3": "green", "4": "yellow"}[e.key];
+  if (c) io?.press(c);
+  if (e.code === "Space" && !e.repeat && io && e.target === document.body) { e.preventDefault(); io.askDown(); }
+});
+addEventListener("keyup", e => { if (e.code === "Space" && io) io.askUp(); });
+const ask = $("#ask");
+ask.addEventListener("pointerdown", () => io?.askDown());
+ask.addEventListener("pointerup", () => io?.askUp());
+ask.addEventListener("pointerleave", () => io?.askUp());
+
+$("#start").onclick = async () => {
+  $("#start").disabled = true; $("#start").textContent = "Running";
+  $("#after").innerHTML = ""; first = true;
+  const e = await embed;
+  ui.typedQuestion = recogniser ? null : () => prompt("Type the child's question (no microphone)");
+  io = new BrowserIO({pack, base, manifest, ui, recogniser});
+  router = e ? new QuestionRouter(pack, e) : {route: async () => ({faq_id: null, score: 0, gate: "gate1"})};
+  const session = new Session(pack, phrases, io, router);
+  try {
+    const log = await session.run(true);
+    ui.screen("Done");
+    add(`<div class="ev good"><b>Debrief for the teacher (spoken in Hindi)</b></div>`);
+    await session.debrief();
+    sessionStorage.setItem("doosri-log", JSON.stringify(log));
+    $("#after").innerHTML = `
+      <h3 style="margin-top:18px">Session log (stays on the device)</h3>
+      <p class="small muted">Group-level counts only: no names, no audio. The teacher's phone can sync it later for a next-day note.</p>
+      <pre>${esc(JSON.stringify(log, null, 1))}</pre>
+      <a class="btn" href="/note.html?id=${encodeURIComponent(pack.id)}">Sync and get tomorrow's note</a>`;
+  } catch (err) { console.error(err); add(`<div class="ev">Error: ${esc(err.message)}</div>`); }
+  $("#start").disabled = false; $("#start").textContent = "Start again"; io.choices(null);
+};
+
+init();
+</script>
+</body>
+</html>

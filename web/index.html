@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Doosri Awaaz</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="/">Doosri Awaaz</a>
+  <nav><a class="on" href="/">Packs</a><a href="/prepare.html">Prepare</a><a href="/about.html">How it works</a></nav>
+</header>
+<main>
+  <h1>A second voice for the grade the teacher is not teaching</h1>
+  <p class="lede">In a multigrade class, while the teacher works with one grade, a small offline device runs 15-20 minutes of guided oral practice for the other, home language first and then Hindi. Claude prepares the activities before class; a person approves every one; the classroom loop makes no network calls.</p>
+
+  <div class="grid3">
+    <div class="card">
+      <div class="step-num">1</div>
+      <h3>Prepare <span class="tag online">online</span></h3>
+      <p class="small muted">Claude turns the week's lesson into an activity pack and a second Claude call scores it. A teacher or local speaker edits and approves it.</p>
+      <a class="btn secondary" href="/prepare.html">Prepare a pack</a>
+    </div>
+    <div class="card">
+      <div class="step-num">2</div>
+      <h3>Run in class <span class="tag offline">offline</span></h3>
+      <p class="small muted">The device plays the pack to the group. Children answer aloud or with colour buttons. Questions outside the pack go to the teacher.</p>
+    </div>
+    <div class="card">
+      <div class="step-num">3</div>
+      <h3>Report <span class="tag online">optional sync</span></h3>
+      <p class="small muted">A 20-second spoken summary for the teacher right away; later, Claude writes a next-day note from the group-level log.</p>
+    </div>
+  </div>
+
+  <h2>Activity packs</h2>
+  <p class="small muted">Open an approved pack in the classroom simulator. It runs in this browser with speech recognition on the device; switch off Wi-Fi after the first load to check.</p>
+  <div id="packs" class="card"><span class="spinner"></span> Loading packs</div>
+</main>
+<script>
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+fetch("/api/packs").then(r => r.json()).then(packs => {
+  const el = document.getElementById("packs");
+  if (!packs.length) { el.innerHTML = '<p class="muted">No packs yet. <a href="/prepare.html">Prepare one.</a></p>'; return; }
+  el.innerHTML = `<table><tr><th>Pack</th><th>Class</th><th>Status</th><th></th></tr>${packs.map(p => `
+    <tr><td><strong>${esc(p.title)}</strong><br><span class="small muted">${esc(p.subject)} · home language ${esc(p.home_language)}</span></td>
+    <td>${p.grade}</td>
+    <td><span class="tag ${p.status === "approved" ? "" : "draft"}">${esc(p.status)}</span>${p.reviewer ? `<br><span class="small muted">by ${esc(p.reviewer)}</span>` : ""}</td>
+    <td style="white-space:nowrap"><a class="btn secondary" href="/review.html?id=${encodeURIComponent(p.id)}">Review</a>
+    ${p.status === "approved" ? `<a class="btn" href="/classroom.html?id=${encodeURIComponent(p.id)}">Run in class</a>` : ""}</td></tr>`).join("")}</table>`;
+}).catch(() => { document.getElementById("packs").innerHTML = '<p class="err">Could not load packs. You may be offline; packs you opened before still work in the simulator.</p>'; });
+</script>
+</body>
+</html>

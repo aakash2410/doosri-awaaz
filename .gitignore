@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.env
+logs/
+web/models/
+packs/*/
+!packs/class2-*/
+.DS_Store
+docs/*.pptx

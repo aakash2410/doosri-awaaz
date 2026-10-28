@@ -1,0 +1,204 @@
+{
+  "id": "fixture-goats",
+  "title": "Test pack: goats",
+  "grade": 2,
+  "subject": "Mathematics",
+  "source_ref": "Test fixture, hand-written",
+  "home_language": "mr",
+  "school_language": "hi",
+  "intro": {
+    "home": "चला, आपण शेळ्या मोजूया.",
+    "school": "चलो, हम बकरियाँ गिनते हैं।"
+  },
+  "story": null,
+  "items": [
+    {
+      "id": "i1",
+      "skill": "counting to 5",
+      "skill_spoken": "पाँच तक गिनती",
+      "prompt": {
+        "home": "तीन शेळ्या आणि दोन शेळ्या. एकूण किती?",
+        "school": "तीन बकरियाँ और दो बकरियाँ। कुल कितनी?"
+      },
+      "choices": [
+        {
+          "colour": "red",
+          "label": {
+            "home": "चार",
+            "school": "चार"
+          }
+        },
+        {
+          "colour": "blue",
+          "label": {
+            "home": "पाच",
+            "school": "पाँच"
+          }
+        }
+      ],
+      "correct": "blue",
+      "accepted_spoken": [
+        "पाच",
+        "पाँच",
+        "पांच",
+        "5"
+      ],
+      "hint": {
+        "home": "बोटांवर मोजा.",
+        "school": "उंगलियों पर गिनो।"
+      },
+      "reveal": {
+        "home": "तीन आणि दोन, पाच.",
+        "school": "तीन और दो, पाँच।"
+      },
+      "praise": {
+        "home": "छान!",
+        "school": "शाबाश!"
+      }
+    },
+    {
+      "id": "i2",
+      "skill": "one less",
+      "skill_spoken": "एक कम",
+      "prompt": {
+        "home": "पाच शेळ्यांमधून एक गेली. किती उरल्या?",
+        "school": "पाँच बकरियों में से एक गई। कितनी बचीं?"
+      },
+      "choices": [
+        {
+          "colour": "green",
+          "label": {
+            "home": "चार",
+            "school": "चार"
+          }
+        },
+        {
+          "colour": "yellow",
+          "label": {
+            "home": "सहा",
+            "school": "छह"
+          }
+        }
+      ],
+      "correct": "green",
+      "accepted_spoken": [
+        "चार",
+        "4"
+      ],
+      "hint": {
+        "home": "एक कमी करा.",
+        "school": "एक कम करो।"
+      },
+      "reveal": {
+        "home": "पाचमधून एक कमी, चार.",
+        "school": "पाँच में से एक कम, चार।"
+      },
+      "praise": {
+        "home": "बरोबर!",
+        "school": "सही!"
+      }
+    },
+    {
+      "id": "i3",
+      "skill": "more or less",
+      "skill_spoken": "ज़्यादा या कम",
+      "prompt": {
+        "home": "सात जास्त की तीन?",
+        "school": "सात ज़्यादा या तीन?"
+      },
+      "choices": [
+        {
+          "colour": "red",
+          "label": {
+            "home": "सात",
+            "school": "सात"
+          }
+        },
+        {
+          "colour": "blue",
+          "label": {
+            "home": "तीन",
+            "school": "तीन"
+          }
+        }
+      ],
+      "correct": "red",
+      "accepted_spoken": [
+        "सात",
+        "7"
+      ],
+      "hint": {
+        "home": "कोणता मोठा आकडा?",
+        "school": "कौन सी बड़ी संख्या?"
+      },
+      "reveal": {
+        "home": "सात जास्त.",
+        "school": "सात ज़्यादा।"
+      },
+      "praise": {
+        "home": "छान!",
+        "school": "बहुत अच्छे!"
+      }
+    }
+  ],
+  "faq": [
+    {
+      "id": "q1",
+      "questions": [
+        "शेळी काय खाते?",
+        "बकरी क्या खाती है?",
+        "बकरी का खाना क्या है?"
+      ],
+      "answer": {
+        "home": "शेळी पाला आणि गवत खाते.",
+        "school": "बकरी पत्ते और घास खाती है।"
+      },
+      "near_misses": [
+        "बकरी कहाँ रहती है?",
+        "बकरी कितना दूध देती है?",
+        "शेळीचे पिल्लू कोणते?",
+        "बकरी कैसे चलती है?"
+      ]
+    },
+    {
+      "id": "q2",
+      "questions": [
+        "एकूण म्हणजे काय?",
+        "कुल का मतलब क्या है?"
+      ],
+      "answer": {
+        "home": "एकूण म्हणजे सगळे मिळून.",
+        "school": "कुल मतलब सब मिलाकर।"
+      },
+      "near_misses": [
+        "कुल कितने हैं?",
+        "एकूण किती शेळ्या?",
+        "जोड़ क्या होता है?"
+      ]
+    }
+  ],
+  "ask_teacher": {
+    "home": "हा प्रश्न तुमच्या शिक्षकांना विचारा.",
+    "school": "यह सवाल अपने शिक्षक से पूछो।"
+  },
+  "closing": {
+    "home": "आजचा खेळ संपला.",
+    "school": "आज का खेल खत्म।"
+  },
+  "status": "approved",
+  "rubric": {
+    "curriculum_alignment": 4,
+    "age_appropriateness": 4,
+    "home_language_naturalness": 3,
+    "answer_unambiguity": 5,
+    "safety_and_culture": 5,
+    "issues": [],
+    "phrases_to_check": []
+  },
+  "review": {
+    "reviewer": "Test",
+    "role": "fixture",
+    "notes": "",
+    "approved_at": "2026-10-28T00:00:00+00:00"
+  }
+}

@@ -1,0 +1,6 @@
+# Python classroom engine (laptop or Suno Sutra device). Runs offline.
+pydantic>=2.7
+vosk>=0.3.45
+fastembed>=0.4
+numpy
+sounddevice>=0.4   # laptop microphone only

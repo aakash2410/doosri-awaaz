@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prepare a pack</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="/">Doosri Awaaz</a>
+  <nav><a href="/">Packs</a><a class="on" href="/prepare.html">Prepare</a><a href="/about.html">How it works</a></nav>
+</header>
+<main>
+  <h1>Prepare an activity pack</h1>
+  <p class="lede">Paste the part of this week's lesson you want the other grade to practise. Claude drafts a 15-20 minute oral pack in the home language and Hindi, then a separate Claude call scores the draft. Nothing reaches a classroom until a person approves it on the next screen.</p>
+  <form id="f" class="card">
+    <div class="row">
+      <div><label for="grade">Class</label><select id="grade"><option>1</option><option selected>2</option><option>3</option></select></div>
+      <div><label for="subject">Subject</label><input id="subject" value="Mathematics" required></div>
+      <div><label for="home">Home language</label>
+        <select id="home"><option value="mr" selected>Marathi</option><option value="bhb">Bhili (experimental)</option><option value="gon">Gondi (experimental)</option></select></div>
+      <div><label for="n">Items</label><select id="n"><option>3</option><option>4</option><option selected>5</option><option>6</option></select></div>
+    </div>
+    <label for="ref">Lesson reference</label>
+    <input id="ref" placeholder="e.g. NCERT Joyful Mathematics Class 2, Chapter 5" required>
+    <label for="src">Lesson content</label>
+    <textarea id="src" style="min-height:220px" placeholder="Learning goal, key ideas, examples and words used in the lesson" required></textarea>
+    <p class="small muted">Bhili and Gondi drafts have no synthetic voice yet; approved lines need community recordings before use.</p>
+    <button id="go">Draft with Claude</button>
+    <span id="status" class="small muted" style="margin-left:10px"></span>
+  </form>
+</main>
+<script>
+document.getElementById("f").addEventListener("submit", async e => {
+  e.preventDefault();
+  const go = document.getElementById("go"), status = document.getElementById("status");
+  go.disabled = true;
+  status.innerHTML = '<span class="spinner"></span> Claude is drafting and scoring the pack. This takes 1-3 minutes.';
+  try {
+    const r = await fetch("/api/prepare", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({
+      grade: +grade.value, subject: subject.value, home_language: home.value, n_items: +n.value,
+      source_ref: ref.value, source_text: src.value})});
+    const body = await r.json();
+    if (!r.ok) throw new Error(typeof body.detail === "string" ? body.detail : "Check the form: lesson content needs at least 40 characters.");
+    location.href = "/review.html?id=" + encodeURIComponent(body.pack.id);
+  } catch (err) {
+    status.innerHTML = `<span class="err">${err.message}</span>`;
+    go.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
