@@ -6,7 +6,8 @@
 <title>How it works</title>
 <link rel="stylesheet" href="/style.css">
 <style>
-  .layer { display: grid; grid-template-columns: 150px 1fr 120px; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .layer { display: grid; grid-template-columns: 150px 1fr 150px; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .layer .tag { align-self: start; justify-self: start; white-space: nowrap; }
   .layer:last-child { border-bottom: 0; }
   @media (max-width: 700px) { .layer { grid-template-columns: 1fr; gap: 4px; } }
   .layer b { color: var(--green); }
