@@ -363,7 +363,7 @@
     "home": "वा! आज तुम्ही सगळ्यांनी खूप छान मोजलं. घरी जाताना रस्त्यात दिसणाऱ्या गोष्टी मोजा. पुन्हा भेटू!",
     "school": "वाह! आज तुम सबने बहुत अच्छा गिना। घर जाते समय रास्ते में दिखने वाली चीज़ें गिनना। फिर मिलेंगे!"
   },
-  "status": "draft",
+  "status": "approved",
   "rubric": {
     "curriculum_alignment": 5,
     "age_appropriateness": 5,
@@ -386,5 +386,10 @@
       "एकूण किती हे कसं काढायचं?"
     ]
   },
-  "review": null
+  "review": {
+    "reviewer": "Aakash",
+    "role": "local speaker",
+    "notes": "",
+    "approved_at": "2026-10-28T11:42:23+00:00"
+  }
 }
