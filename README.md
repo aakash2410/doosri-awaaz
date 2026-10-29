@@ -75,6 +75,7 @@ The four NeoKey buttons (IO expander messages `BA1`..`BD1`) are red, blue, green
 ```bash
 pytest                                   # engine flow, matching, gates, approval, note check
 python -m evals.asr_eval <pack-id>       # answer recognition on synthetic voices
+python -m evals.calibrate_export <pack-id>  # pack audio as Calibrate (calibrate.artpark.ai) datasets
 ```
 
 Results so far (synthetic adult voices, so an upper bound for children in a noisy room):
@@ -92,7 +93,7 @@ web/         web app: prepare, review, classroom simulator (offline, service wor
 content/     lesson sources
 packs/       approved packs (pack.json + audio/)
 evals/       evaluation scripts
-docs/        teacher test kit, demo video script
+docs/        teacher call guide, demo video script
 tests/       pytest suite and fixture pack
 ```
 

@@ -8,3 +8,4 @@ packs/*/
 !packs/class2-*/
 .DS_Store
 docs/*.pptx
+evals/calibrate/
