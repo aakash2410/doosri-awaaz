@@ -6,6 +6,7 @@ The classroom loop never imports this module: it makes no network calls.
 from __future__ import annotations
 
 import logging
+import os
 from pathlib import Path
 from typing import Type, TypeVar
 
@@ -37,6 +38,8 @@ def client() -> anthropic.Anthropic:
             for line in ENV_FILE.read_text().splitlines():
                 if line.startswith("ANTHROPIC_API_KEY="):
                     key = line.split("=", 1)[1].strip().strip('"')
+        if not (key or os.environ.get("ANTHROPIC_API_KEY")):
+            raise ClaudeError("ANTHROPIC_API_KEY is not set on this server; Prepare and the next-day note need it")
         _client = anthropic.Anthropic(api_key=key, max_retries=3) if key else anthropic.Anthropic(max_retries=3)
     return _client
 

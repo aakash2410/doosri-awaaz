@@ -3,8 +3,10 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
-# Offline speech and embedding models for the browser simulator (~170 MB, fetched once at build).
-RUN python -m engine.fetch_models --web
+# Offline speech model for the browser simulator (44 MB, fetched once at build). The embedding
+# model is dropped: a small instance serves 118 MB too slowly, so browsers load it from the
+# Hugging Face CDN instead (see web/js/device.js).
+RUN python -m engine.fetch_models --web && rm -rf web/models/Xenova
 # Hugging Face Spaces runs the container as uid 1000; the server writes new packs under /app/packs.
 RUN useradd -m -u 1000 user && chown -R user /app
 USER user

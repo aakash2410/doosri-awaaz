@@ -10,7 +10,9 @@ export async function loadEmbedder() {
   const {pipeline, env} = await import(TRANSFORMERS);
   env.localModelPath = "/models/";
   env.allowLocalModels = true;
-  env.allowRemoteModels = false;
+  // The hosted demo does not serve the 118 MB model itself; it comes from the Hugging Face CDN
+  // once and stays in the browser cache, so sessions still run offline afterwards.
+  env.allowRemoteModels = true;
   const extract = await pipeline("feature-extraction", EMBED_MODEL, {dtype: "q8"});
   return async texts => (await extract(texts, {pooling: "mean", normalize: true})).tolist();
 }
