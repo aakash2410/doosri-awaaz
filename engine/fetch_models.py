@@ -47,7 +47,9 @@ def pack_for_web(model_dir: Path) -> None:
         if out.exists():
             continue
         out.parent.mkdir(parents=True, exist_ok=True)
-        urllib.request.urlretrieve(f"https://huggingface.co/{WEB_EMBED}/resolve/main/{name}", out)
+        part = out.with_name(out.name + ".part")  # renamed only when complete, so a rerun never keeps a partial file
+        urllib.request.urlretrieve(f"https://huggingface.co/{WEB_EMBED}/resolve/main/{name}", part)
+        part.rename(out)
         print(f"wrote {out}")
 
 
