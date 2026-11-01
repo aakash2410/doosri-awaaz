@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from doosri import store
@@ -138,3 +139,15 @@ def test_approval_gate(pack, tmp_path, monkeypatch):
 ])
 def test_question_gates(pack, question, expected):
     assert QuestionRouter(pack, embedder()).route(question).faq_id == expected
+
+
+def test_question_spelled_differently_by_the_recogniser(pack):
+    pack.faq[0].questions.append("उल्टी गिनती क्या होती है?")
+    router = QuestionRouter(pack, lambda texts: np.zeros((len(texts), 2)))
+    assert router.route("उलटी गिनती क्या होती है").faq_id == "q1"
+    assert router.route("उलटी गिनती कैसे करते हैं").faq_id is None
+
+
+def test_question_below_similarity_goes_to_the_teacher(pack):
+    embed = lambda texts: np.array([[0.7, 0.714] if t == "कर्म" else [1.0, 0.0] for t in texts])
+    assert QuestionRouter(pack, embed).route("कर्म").gate == "gate1"

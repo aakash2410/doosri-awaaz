@@ -6,7 +6,7 @@ export const MAX_UNCLEAR = 2;
 export const LISTEN_SECONDS = 8;
 export const MAX_QUESTIONS = 3;
 export const MIN_CONFIDENCE = 0.6;
-export const SIMILARITY = 0.6;
+export const SIMILARITY = 0.75;
 export const MARGIN = 0.05;
 
 const DEV_DIGITS = "०१२३४५६७८९";
@@ -18,6 +18,9 @@ export function normalize(text) {
   return t.split(/\s+/).filter(Boolean).join(" ");
 }
 const tokens = t => normalize(t).split(" ").filter(Boolean);
+// Chandrabindu, anusvara, nukta, virama: the recogniser and a pack can differ on these
+// (उलटी / उल्टी, ज्यादा / ज़्यादा, उंगली / उँगली), and the embedding model reads them as different words.
+const spellingKey = t => normalize(t).normalize("NFD").replace(/[\u0901\u0902\u093c\u094d]/g, "");
 
 export function judgeButton(item, colour) {
   return {result: colour === item.correct ? "correct" : "wrong", colour};
@@ -55,7 +58,10 @@ export function grammarWords(item, colourWords) {
 const dot = (a, b) => a.reduce((s, x, i) => s + x * b[i], 0);
 
 export class QuestionRouter {
-  constructor(pack, embed) { this.pack = pack; this.embed = embed; this.faq = null; }
+  constructor(pack, embed) {
+    this.pack = pack; this.embed = embed; this.faq = null;
+    this.spellings = new Map(pack.faq.flatMap(q => q.questions.map(t => [spellingKey(t), q.id])));
+  }
   async ready() {
     if (this.faq) return;
     this.faq = [];
@@ -65,6 +71,8 @@ export class QuestionRouter {
     }
   }
   async route(question) {
+    const same = this.spellings.get(spellingKey(question));
+    if (same) return {faq_id: same, score: 1, gate: "answered"};
     await this.ready();
     const [v] = await this.embed([normalize(question)]);
     let best = {faq_id: null, score: 0, gate: "gate1"};

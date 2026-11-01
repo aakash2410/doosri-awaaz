@@ -4,8 +4,10 @@ Answers: speech recognition is restricted to the words a pack expects, then
 matched here. Anything uncertain is "unclear" and triggers a re-prompt, so a
 child is never marked wrong on a recognition error.
 
-Questions: two gates before the device answers, both using a small
-multilingual sentence-embedding model on the device.
+Questions: a question spelled like one of the pack's phrasings, apart from the
+marks the recogniser writes differently, is answered directly. Otherwise there
+are two gates before the device answers, both using a small multilingual
+sentence-embedding model on the device.
   Gate 1: the question must be close to one of the ways the pack says children
           ask a FAQ (similarity >= SIMILARITY).
   Gate 2: it must be closer to those than to the FAQ's near-miss questions,
@@ -86,8 +88,15 @@ def grammar_words(item: Item) -> List[str]:
 # ---------- question routing ----------
 
 EMBED_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-SIMILARITY = 0.6
+SIMILARITY = 0.75
 MARGIN = 0.05
+# Chandrabindu, anusvara, nukta, virama: the recogniser and a pack can differ on these
+# (उलटी / उल्टी, ज्यादा / ज़्यादा, उंगली / उँगली), and the embedding model reads them as different words.
+SPELLING_MARKS = str.maketrans("", "", "\u0901\u0902\u093c\u094d")
+
+
+def spelling_key(text: str) -> str:
+    return unicodedata.normalize("NFD", normalize(text)).translate(SPELLING_MARKS)
 
 
 @dataclass
@@ -113,10 +122,14 @@ class Embedder:
 class QuestionRouter:
     def __init__(self, pack: Pack, embed: Optional[Embedder] = None):
         self.embed = embed or Embedder()
+        self.spellings = {spelling_key(t): q.id for q in pack.faq for t in q.questions}
         self.faq = [(q.id, self.embed(q.questions), self.embed(q.near_misses) if q.near_misses else None)
                     for q in pack.faq]
 
     def route(self, question: str) -> Route:
+        same = self.spellings.get(spelling_key(question))
+        if same:
+            return Route(same, 1.0, "answered")
         v = self.embed([question])[0]
         best = Route(None, 0.0, "gate1")
         for fid, pos, neg in self.faq:

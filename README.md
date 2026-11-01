@@ -29,7 +29,7 @@ The classroom loop ([`engine/`](engine/), and its browser port in [`web/js/engin
 - Children only hear lines a person approved. Approval is blocked by check errors, and by rubric scores below 3 unless the reviewer writes a note ([`doosri/store.py`](doosri/store.py)). The engine refuses to run a draft pack.
 - No text is generated in class. Answers are matched against the item's expected words; questions are matched to approved FAQ answers or sent to the teacher.
 - Speech recognition is restricted to each item's expected words. Low confidence or an unknown word means "I didn't hear, say it again", never a wrong mark.
-- Two gates for questions ([`engine/match.py`](engine/match.py)): close enough to a known phrasing (similarity >= 0.6), and closer to it than to Claude-written near-miss questions (margin >= 0.05).
+- Two gates for questions ([`engine/match.py`](engine/match.py)): close enough to a known phrasing (similarity >= 0.75), and closer to it than to Claude-written near-miss questions (margin >= 0.05). A question spelled like a known phrasing, apart from marks the recogniser writes differently (उलटी / उल्टी), skips the gates.
 - No child audio is stored or leaves the device. The log has counts, timings and question text, no names.
 - The next-day note is checked by code: every count, item and question must match the log.
 
@@ -81,7 +81,8 @@ python -m evals.calibrate_export <pack-id>  # pack audio as Calibrate (calibrate
 Results so far (synthetic adult voices, so an upper bound for children in a noisy room):
 
 - Answer recognition, test pack: 24 spoken answers in Marathi and Hindi, 22 judged right, 2 re-prompted, 0 marked wrongly.
-- Question routing: 8 of 8 test questions handled correctly (4 answered, 4 refused, including near misses such as "what does a goat drink?" next to "what does a goat eat?"), same result in Python and in the browser.
+- Question routing, typed text: 8 of 8 test questions handled correctly (4 answered, 4 refused, including near misses such as "what does a goat drink?" next to "what does a goat eat?"), same result in Python and in the browser.
+- Question routing, spoken through the recogniser in the browser (one synthetic Hindi voice, 40 phrasings from two packs, half of them Marathi): 15 answered right, 0 wrong, 25 sent to the teacher; 6 of 6 questions outside the packs sent to the teacher. Before we tightened the gates this was 18 right, 4 wrong, 18 sent to the teacher. The Hindi model garbles most Marathi questions, so those mostly go to the teacher. The thresholds were tuned on these same questions, so treat 0 wrong as a best case.
 - We first tried small on-device LLMs for question routing (qwen2.5 1.5B and 3B, gemma3 1B). Each got 4 of 8, so we replaced them with embeddings plus near-miss questions.
 
 ## Layout
