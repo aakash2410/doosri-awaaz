@@ -6,11 +6,12 @@
 <title>Prepare a pack</title>
 <link rel="stylesheet" href="/style.css">
 </head>
-<body>
+<body data-step="prepare">
 <header class="top">
   <a class="brand" href="/">Doosri Awaaz</a>
   <nav><a href="/">Packs</a><a class="on" href="/prepare.html">Prepare</a><a href="/about.html">How it works</a></nav>
 </header>
+<ol class="steps" id="steps"></ol>
 <main>
   <h1>Prepare an activity pack</h1>
   <p class="lede">Paste the part of this week's lesson you want the other grade to practise. Claude drafts a 15-20 minute oral pack in the home language and Hindi, then a separate Claude call scores the draft. Nothing reaches a classroom until a person approves it on the next screen.</p>
@@ -50,5 +51,6 @@ document.getElementById("f").addEventListener("submit", async e => {
   }
 });
 </script>
+<script src="/js/steps.js"></script>
 </body>
 </html>

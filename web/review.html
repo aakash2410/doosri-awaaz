@@ -14,11 +14,12 @@
   .crit { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--line); }
 </style>
 </head>
-<body>
+<body data-step="review">
 <header class="top">
   <a class="brand" href="/">Doosri Awaaz</a>
   <nav><a href="/">Packs</a><a href="/prepare.html">Prepare</a><a href="/about.html">How it works</a></nav>
 </header>
+<ol class="steps" id="steps"></ol>
 <main id="main"><span class="spinner"></span> Loading</main>
 <script>
 const id = new URLSearchParams(location.search).get("id");
@@ -48,7 +49,7 @@ function render() {
     <p class="lede">Class ${pack.grade} ${esc(pack.subject)} · ${esc(pack.source_ref)} · home language ${esc(pack.home_language)}
       <span class="tag ${approved ? "" : "draft"}">${esc(pack.status)}</span></p>
     ${approved ? `<div class="notice good">Approved by ${esc(pack.review.reviewer)} (${esc(pack.review.role)}) on ${esc(pack.review.approved_at.slice(0,10))}. ${pack.review.notes ? "Note: " + esc(pack.review.notes) : ""}
-      <a class="btn" style="margin-left:8px" href="/classroom.html?id=${encodeURIComponent(pack.id)}">Run in class</a></div>` :
+      <a class="btn" style="margin-left:8px" href="/classroom.html?id=${encodeURIComponent(pack.id)}">Next: run it in class →</a></div>` :
       `<div class="notice">Draft. Read every line aloud, fix anything that sounds wrong, then approve. Editing an approved pack sends it back to draft.</div>`}
 
     <div class="grid2">
@@ -148,5 +149,6 @@ fetch(`/api/packs/${encodeURIComponent(id)}`).then(r => { if (!r.ok) throw new E
   .then(d => { ({pack, findings} = d); render(); })
   .catch(() => document.getElementById("main").innerHTML = '<p class="err">Pack not found.</p>');
 </script>
+<script src="/js/steps.js"></script>
 </body>
 </html>

@@ -48,11 +48,12 @@
   pre { background: #f0f3f1; padding: 10px; border-radius: 8px; overflow: auto; font-size: 12px; max-height: 260px; }
 </style>
 </head>
-<body>
+<body data-step="classroom">
 <header class="top">
   <a class="brand" href="/">Doosri Awaaz</a>
   <nav><a href="/">Packs</a><a href="/prepare.html">Prepare</a><a href="/about.html">How it works</a></nav>
 </header>
+<ol class="steps" id="steps"></ol>
 <main>
   <h1 id="title">Classroom device</h1>
   <p class="lede">This page stands in for the device in the room. Speech recognition and question matching run here in the browser. After the first load, turn off Wi-Fi: the session still runs.</p>
@@ -199,12 +200,13 @@ $("#start").onclick = async () => {
       <h3 style="margin-top:18px">Session log (stays on the device)</h3>
       <p class="small muted">Group-level counts only: no names, no audio. The teacher's phone can sync it later for a next-day note.</p>
       <pre>${esc(JSON.stringify(log, null, 1))}</pre>
-      <a class="btn" href="/note.html?id=${encodeURIComponent(pack.id)}">Sync and get tomorrow's note</a>`;
+      <a class="btn" href="/note.html?id=${encodeURIComponent(pack.id)}">Next: sync and get tomorrow's note →</a>`;
   } catch (err) { console.error(err); add(`<div class="ev">Error: ${esc(err.message)}</div>`); }
   $("#start").disabled = false; $("#start").textContent = "Start again"; io.choices(null);
 };
 
 init();
 </script>
+<script src="/js/steps.js"></script>
 </body>
 </html>

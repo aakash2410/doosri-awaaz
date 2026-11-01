@@ -1,6 +1,6 @@
 // Caches the simulator, its models and pack audio so a session runs with no network.
 const CACHE = "doosri-v1";
-const SHELL = ["/classroom.html", "/style.css", "/js/engine.js", "/js/device.js", "/vendor/vosk.js"];
+const SHELL = ["/classroom.html", "/style.css", "/js/engine.js", "/js/device.js", "/js/steps.js", "/vendor/vosk.js"];
 
 self.addEventListener("install", e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())));
 self.addEventListener("activate", e => e.waitUntil(self.clients.claim()));
