@@ -29,26 +29,41 @@ from .schema import Pack
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 WEB = Path(__file__).resolve().parent.parent / "web"
-# Claude calls per client IP per hour on a public demo.
+# Claude calls per client IP per hour on a public demo. A client can fake its IP, so the total
+# across all clients is what bounds the spend.
 CLAUDE_CALLS_PER_HOUR = int(os.environ.get("DOOSRI_CLAUDE_CALLS_PER_HOUR", "6"))
+CLAUDE_CALLS_PER_HOUR_TOTAL = int(os.environ.get("DOOSRI_CLAUDE_CALLS_PER_HOUR_TOTAL", "30"))
 # Sample packs that visitors to a public demo can run but not edit or re-approve.
 LOCKED = set(filter(None, os.environ.get("DOOSRI_LOCKED_PACKS", "").split(",")))
 
 app = FastAPI(title="Doosri Awaaz")
 _calls: dict = defaultdict(deque)
+_total: deque = deque()
 _lock = threading.Lock()
 
 
+def _client_ip(request: Request) -> str:
+    # Cloudflare sets its header itself; X-Forwarded-For starts with whatever the client sent.
+    forwarded = request.headers.get("cf-connecting-ip") or request.headers.get("x-forwarded-for")
+    return forwarded.split(",")[0] if forwarded else request.client.host if request.client else "?"
+
+
 def _limit(request: Request) -> None:
-    ip = request.headers.get("x-forwarded-for", request.client.host if request.client else "?").split(",")[0]
+    ip = _client_ip(request)
     now = time.time()
+    busy = HTTPException(429, "Demo limit reached for this hour. The sample packs still work.")
     with _lock:
+        while _total and now - _total[0] > 3600:
+            _total.popleft()
+        if len(_total) >= CLAUDE_CALLS_PER_HOUR_TOTAL:
+            raise busy
         q = _calls[ip]
         while q and now - q[0] > 3600:
             q.popleft()
         if len(q) >= CLAUDE_CALLS_PER_HOUR:
-            raise HTTPException(429, "Demo limit reached for this hour. The sample packs still work.")
+            raise busy
         q.append(now)
+        _total.append(now)
 
 
 def _findings(pack: Pack) -> list:

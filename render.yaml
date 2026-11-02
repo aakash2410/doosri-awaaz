@@ -8,3 +8,5 @@ services:
         sync: false
       - key: DOOSRI_CLAUDE_CALLS_PER_HOUR
         value: "6"
+      - key: DOOSRI_CLAUDE_CALLS_PER_HOUR_TOTAL
+        value: "30"

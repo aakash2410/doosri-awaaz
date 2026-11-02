@@ -1,10 +1,13 @@
 import json
+from collections import defaultdict, deque
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
+from fastapi import HTTPException
 
-from doosri import store
+from doosri import server, store
 from doosri.checks import blocking, check_pack
 from doosri.report import HardItem, TeacherNote, check_note
 from doosri.schema import Pack
@@ -151,3 +154,22 @@ def test_question_spelled_differently_by_the_recogniser(pack):
 def test_question_below_similarity_goes_to_the_teacher(pack):
     embed = lambda texts: np.array([[0.7, 0.714] if t == "कर्म" else [1.0, 0.0] for t in texts])
     assert QuestionRouter(pack, embed).route("कर्म").gate == "gate1"
+
+
+def test_faked_headers_cannot_get_past_the_claude_limits(monkeypatch):
+    monkeypatch.setattr(server, "CLAUDE_CALLS_PER_HOUR", 2)
+    monkeypatch.setattr(server, "CLAUDE_CALLS_PER_HOUR_TOTAL", 3)
+    monkeypatch.setattr(server, "_calls", defaultdict(deque))
+    monkeypatch.setattr(server, "_total", deque())
+
+    def call(**headers):
+        headers = {k.replace("_", "-"): v for k, v in headers.items()}
+        server._limit(SimpleNamespace(headers=headers, client=SimpleNamespace(host="10.0.0.1")))
+
+    call(cf_connecting_ip="1.1.1.1", x_forwarded_for="9.9.9.1")
+    call(cf_connecting_ip="1.1.1.1", x_forwarded_for="9.9.9.2")
+    with pytest.raises(HTTPException):  # same visitor, new fake X-Forwarded-For
+        call(cf_connecting_ip="1.1.1.1", x_forwarded_for="9.9.9.3")
+    call(cf_connecting_ip="2.2.2.2")
+    with pytest.raises(HTTPException):  # a new visitor, but the hourly total is used up
+        call(cf_connecting_ip="3.3.3.3")
